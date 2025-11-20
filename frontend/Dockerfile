@@ -1,0 +1,27 @@
+FROM node:20.19.5-alpine AS dev
+
+WORKDIR /app/frontend
+
+COPY package*.json ./
+RUN npm install
+
+# Copy code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+CMD ["npm", "start"]
+
+FROM node:20.19.5-alpine AS build
+WORKDIR /app/frontend
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM nginx:alpine AS prod
+COPY --from=build /app/frontend/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf  # Custom Nginx configuration (see below)
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
